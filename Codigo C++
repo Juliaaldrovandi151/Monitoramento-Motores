@@ -1,0 +1,86 @@
+#include <WiFi.h>           // Biblioteca para gerenciar o Wi-Fi do ESP32
+#include <PubSubClient.h>   // Biblioteca para o protocolo MQTT
+#include <DHT.h>            // Biblioteca para o sensor de temperatura
+#include <LiquidCrystal_I2C.h> // Biblioteca para o display LCD via I2C
+
+// ---------- CONFIGURAÇÕES DE REDE E COMUNICAÇÃO  ----------
+const char* ssid = "Wokwi-GUEST";           // Nome da rede Wi-Fi do simulador
+const char* password = "";                  // Senha da rede (vazia no Wokwi)
+const char* mqtt_server = "broker.hivemq.com"; // Endereço do servidor Broker
+const char* topic_pub = "senai/julia/motor/dados"; // Tópico de envio (Telemetria)
+
+WiFiClient espClient;                       // Cria o cliente de rede
+PubSubClient client(espClient);             // Inicializa o cliente MQTT usando a rede
+DHT dht(15, DHT22);                         // Configura o sensor DHT no pino 15
+LiquidCrystal_I2C lcd(0x27, 16, 2);         // Configura o LCD no endereço 0x27
+
+// ---------- FUNÇÃO DE RECONEXÃO  ----------
+void reconnect() {
+  while (!client.connected()) {
+    Serial.print("Tentando conectar ao MQTT...");
+    //  Uso de ID exclusivo para garantir a segurança da conexão
+    if (client.connect("ESP32_Motor_Julia_1")) {
+      Serial.println("Conectado!");
+    } else {
+      Serial.print("Falha, rc="); //return code (código de retorno da conexão)
+      Serial.print(client.state());
+      delay(2000); // Aguarda 2 segundos antes de tentar novamente
+    }
+  }
+}
+
+void setup() {
+  pinMode(12, OUTPUT);       // Configura pino do LED Verde como saída
+  Serial.begin(115200);      // Inicia monitor serial para depuração
+  dht.begin();               // Inicializa o sensor DHT
+  lcd.init();                // Inicializa o hardware do LCD
+  lcd.backlight();           // Liga a luz de fundo do LCD
+
+  WiFi.begin(ssid, password); // Tenta conectar ao Wi-Fi
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  client.setServer(mqtt_server, 1883); // Configura o Broker e a porta
+}
+
+void loop() {
+
+  // Se o MQTT desconectar, tenta reconectar 
+  if (!client.connected()) {
+    reconnect();
+  }
+  client.loop(); // Mantém a conexão MQTT ativa
+
+  // --- LEITURA E PROCESSAMENTO  ---
+  float t = dht.readTemperature(); // Lê a temperatura real do sensor
+  
+  // C8: Função map para converter sinal analógico (0-4095) em escala 0-100%
+  int vibRaw = analogRead(34);
+  int corrRaw = analogRead(35);
+  int v = map(vibRaw, 0, 4095, 0, 100); 
+  int c = map(corrRaw, 0, 4095, 0, 100);
+
+  // Tratamento básico para erro de leitura (nan)
+  if (isnan(t)) t = 0.0;
+
+  // --- FORMATAÇÃO E ENVIO ---
+  // Formato de String simples separada por vírgulas conforme manual
+  String payload = String(t) + "," + String(v) + "," + String(c);
+  
+  digitalWrite(12, HIGH); // Liga o LED ao iniciar o envio (Requisito Manual)
+  client.publish(topic_pub, payload.c_str()); // Envia os dados para o Java
+  delay(200); 
+  digitalWrite(12, LOW); // Apaga após o envio
+
+  // --- EXIBIÇÃO LOCAL  ---
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("T:"); lcd.print(t); lcd.print("°C"); lcd.print(" V:"); lcd.print(v);
+  lcd.setCursor(0, 1);
+  lcd.print("Corrente: "); lcd.print(c); lcd.print("%");
+
+  Serial.println("Dados Enviados: " + payload);
+  delay(2000); // Aguarda 2 segundos
+}
