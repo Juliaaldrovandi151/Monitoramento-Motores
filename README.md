@@ -1,61 +1,57 @@
-Monitoramento de Motor com ESP32 e Java (MQTT)
+## Monitoramento de Motor
+## ESP32 + Java com MQTT
+## Descrição
 
-Sistema de monitoramento em tempo real utilizando ESP32 para coleta de dados e Java para recepção via protocolo MQTT.
+Sistema de monitoramento em tempo real utilizando ESP32 para coleta de dados e Java para recepção das informações via protocolo MQTT.
 
-Sobre o projeto
+## Funcionamento
+ESP32 (C++)
 
-O ESP32 realiza a leitura de:
+Leitura de temperatura (DHT22)
 
-Temperatura (DHT22)
+Leitura de vibração (potenciômetro)
 
-Vibração (potenciômetro)
+Leitura de corrente (potenciômetro)
 
-Corrente (potenciômetro)
+Envio dos dados via MQTT
 
-Os dados são enviados via MQTT para o broker público HiveMQ e recebidos por uma aplicação Java que exibe as informações no console.
+Java (Backend)
 
-Tópico utilizado:
+Conexão com broker HiveMQ
+
+Inscrição no tópico MQTT
+
+Exibição dos dados no console
+
+## Tópico utilizado:
 
 senai/julia/motor/dados
-Arquitetura
 
-ESP32 (C++) → Broker HiveMQ → Java (Eclipse Paho)
+## Arquitetura
 
-Comunicação baseada no modelo publish/subscribe.
+ESP32 → Broker HiveMQ → Aplicação Java
 
-Tecnologias
+Modelo de comunicação: Publish / Subscribe (MQTT)
+
+## Tecnologias Utilizadas
 
 ESP32
-
 C++
-
 Java
-
 MQTT
-
 Eclipse Paho
-
 HiveMQ
-
 Wokwi
 
-Como executar
-ESP32
+## Execução
+Firmware
 
-Abrir no Wokwi
+Abrir no Arduino IDE ou Wokwi e realizar upload para o ESP32.
 
-Instalar bibliotecas necessárias
+Aplicação Java
 
-Fazer upload do firmware
+Abrir no IntelliJ e executar a classe Main.
 
-Java
+## Finalidade
 
-Abrir no IntelliJ
-
-Verificar dependência do Paho no pom.xml
-
-Executar a classe Main
-
-Objetivo
-
-Demonstrar a integração entre hardware e software em um sistema de monitoramento utilizando arquitetura IoT.
+Projeto acadêmico voltado à integração entre hardware e software em um contexto de monitoramento industrial utilizando IoT.
